@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ask PDF</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+  <h2>Ask a Question from PDF</h2>
+  <input type="text" id="question" placeholder="Enter your question" required>
+  <button onclick="askQuestion()">Ask</button>
+  <p><strong>Answer:</strong> <span id="answer"></span></p>
+  <p><strong>Source(s):</strong> <span id="sources"></span></p>
+
+  <script>
+    async function askQuestion() {
+      const question = document.getElementById('question').value;
+      const response = await fetch('/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ question })
+      });
+
+      const data = await response.json();
+      document.getElementById('answer').innerText = data.answer || data.error;
+      document.getElementById('sources').innerText = data.sources ? data.sources.join(', ') : 'No source found';
+    }
+  </script>
+
+
+
+</body>
+</html>
