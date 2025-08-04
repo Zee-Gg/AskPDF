@@ -19,13 +19,19 @@ AskPDF is a Flask-based web application that allows users to ask natural languag
  project/
 
 app.py                  # Main Flask app
+
 .env                    # Environment variables (Mistral API key)
+
 /templates
+
    index.html          # Frontend HTML page
 /static
+
   style.css           # Styling for frontend
 pdfs
+
   pdf-files               # Your PDF files to load
+  
  vector_index           # FAISS vector storage (auto-generated)
 
 
