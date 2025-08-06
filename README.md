@@ -46,11 +46,17 @@ pip install -r requirements.txt
 **Sample requirements.txt:**
 
 Flask
+
 python-dotenv
+
 langchain
+
 langchain-community
+
 langchain-mistralai
+
 sentence-transformers
+
 faiss-cpu
 
 **Environment Variables**
