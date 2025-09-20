@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, jsonify
 import os
+import streamlit as st
 from dotenv import load_dotenv
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -7,71 +7,94 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.document_loaders import PyPDFLoader
 from langchain.chains.question_answering import load_qa_chain
 from langchain_mistralai.chat_models import ChatMistralAI
+import tempfile
 
 # ✅ Load environment variables
 load_dotenv()
 api_key = os.getenv("MISTRAL_API_KEY")
 if not api_key:
-    raise ValueError("❌ MISTRAL_API_KEY not found in .env file")
+    st.error("❌ **MISTRAL_API_KEY not found in `.env` file. Please add it and restart the app.**")
+    st.stop()
 
 # 📁 Constants
-PDF_FOLDER_PATH = "../pdfs"
 VECTOR_STORE_PATH = "vector_index"
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
-# ✅ Initialize Flask app
-app = Flask(__name__, static_folder="../static", template_folder="../templates")
+# 🎨 Streamlit Page Config
+st.set_page_config(page_title="Ask Your PDF", layout="wide")
 
-# 📄 Load PDFs and attach metadata (filename)
-all_docs = []
-for filename in os.listdir(PDF_FOLDER_PATH):
-    if filename.endswith(".pdf"):
-        loader = PyPDFLoader(os.path.join(PDF_FOLDER_PATH, filename))
-        documents = loader.load()
-        for doc in documents:
-            doc.metadata["source"] = filename  # Add source filename
-        all_docs.extend(documents)
+# 🔹 Header
+st.markdown(
+    "<h1 style='text-align: center; color: #2E86C1;'>📄 Ask Questions from Your PDF</h1>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<p style='text-align: center; font-size:18px;'>Upload your PDF files and ask anything about their content!</p>",
+    unsafe_allow_html=True
+)
 
-# ✂️ Split text into chunks
-text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-docs = text_splitter.split_documents(all_docs)
+# 📂 File Uploader
+uploaded_files = st.file_uploader(
+    "📂 **Upload PDF Files**",
+    type=["pdf"],
+    accept_multiple_files=True,
+    help="You can upload multiple PDF documents."
+)
 
-# 🔍 Vector index
-embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME)
-if os.path.exists(VECTOR_STORE_PATH):
-    print("✅ Loading existing FAISS index...")
-    vectorstore = FAISS.load_local(VECTOR_STORE_PATH, embeddings, allow_dangerous_deserialization=True)
-else:
-    print("🔄 Creating new FAISS index...")
+if uploaded_files:
+    all_docs = []
+
+    # Save uploaded PDFs temporarily & load
+    with tempfile.TemporaryDirectory() as temp_dir:
+        for uploaded_file in uploaded_files:
+            file_path = os.path.join(temp_dir, uploaded_file.name)
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+
+            loader = PyPDFLoader(file_path)
+            documents = loader.load()
+            for doc in documents:
+                doc.metadata["source"] = uploaded_file.name
+            all_docs.extend(documents)
+
+    # ✂️ Split text into chunks
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    docs = text_splitter.split_documents(all_docs)
+
+    # 🔍 Vector store
+    embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME)
     vectorstore = FAISS.from_documents(docs, embeddings)
-    vectorstore.save_local(VECTOR_STORE_PATH)
 
-# 🤖 LLM + QA Chain
-llm = ChatMistralAI(api_key=api_key, model="mistral-small", temperature=0.5, max_tokens=512)
-qa_chain = load_qa_chain(llm, chain_type="stuff")
+    # 🤖 LLM + QA Chain
+    llm = ChatMistralAI(
+        api_key=api_key,
+        model="mistral-small",
+        temperature=0.5,
+        max_tokens=512
+    )
+    qa_chain = load_qa_chain(llm, chain_type="stuff")
 
-# 🔗 Routes
-@app.route("/")
-def index():
-    return render_template("index.html")
+    # 💬 Question Input
+    st.markdown("### 💡 **Ask a Question**")
+    question = st.text_input(
+        "Enter your question below:",
+        placeholder="Your PDFs are listening... ask away!",
+        label_visibility="collapsed"
+    )
 
-@app.route("/ask", methods=["POST"])
-def ask():
-    data = request.get_json()
-    question = data.get("question", "")
-    if not question:
-        return jsonify({"error": "❌ Question is required."}), 400
+    # 📜 Get Answer
+    if question:
+        with st.spinner("🔎 **Thinking...**"):
+            relevant_docs = vectorstore.similarity_search(question, k=3)
+            answer = qa_chain.run(input_documents=relevant_docs, question=question)
+            sources = list(set([doc.metadata.get("source", "Unknown") for doc in relevant_docs]))
 
-    relevant_docs = vectorstore.similarity_search(question, k=3)
-    answer = qa_chain.run(input_documents=relevant_docs, question=question)
+        # Display Answer
+        st.markdown("<h3 style='color: #27AE60;'>✅ Answer:</h3>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size:18px;'>{answer}</p>", unsafe_allow_html=True)
 
-    sources = list(set([doc.metadata.get("source", "Unknown") for doc in relevant_docs]))
+        # Display Sources
+        st.markdown("**📚 Sources:** " + ", ".join(sources))
 
-    return jsonify({
-        "answer": answer,
-        "sources": sources
-    })
-
-# ▶️ Run the app
-if __name__ == "__main__":
-    app.run(debug=True)
+else:
+    st.info("👆 **Upload at least one PDF to get started.**", icon="ℹ️")
