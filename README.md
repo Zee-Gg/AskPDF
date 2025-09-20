@@ -1,101 +1,91 @@
-**AskPDF — Intelligent PDF Question Answering with Mistral & Flask**
+# AskPDF — Intelligent PDF Question Answering with Mistral & Streamlit
 
-AskPDF is a Flask-based web application that allows users to ask natural language questions based on the contents of PDF documents. It uses MistralAI’s LLM via LangChain, sentence-transformer embeddings, and FAISS for fast semantic search.
+AskPDF is a **Streamlit-based web application** that allows users to upload multiple PDF files and ask natural language questions about their contents.
+It leverages **Mistral AI’s LLM via LangChain**, **sentence-transformer embeddings**, and **FAISS** for efficient semantic search.
 
-**Features**
- 
- Natural language QA from PDF documents
+---
 
- Powered by Mistral AI, LangChain, HuggingFace embeddings
+## **Features**
 
- Efficient similarity search using FAISS vector database
+* Upload multiple PDF documents
+* Ask natural language questions from your PDFs
+* Powered by Mistral AI and LangChain
+* Fast semantic search using HuggingFace embeddings and FAISS
+* Automatic metadata tagging with PDF filenames
+* Simple, interactive, and responsive Streamlit UI
 
- Simple and interactive web interface using Flask
+---
 
- Automatic metadata tagging with PDF filenames
+## **Project Structure**
 
- **Project Structure**
+```
+project/
+│── multiple-pdf.py        # Main Streamlit app
+│── .env                   # Environment variables (Mistral API key)
+│── requirements.txt       # Dependencies
+│── vector_index/          # FAISS vector storage (auto-generated)
+```
 
- project/
+---
 
-app.py                  # Main Flask app
+## **Requirements**
 
-.env                    # Environment variables (Mistral API key)
+* Python 3.9+
+* Install dependencies:
 
-/templates
-
-   index.html          # Frontend HTML page
-/static
-
-  style.css           # Styling for frontend
-pdfs
-
-  pdf-files               # Your PDF files to load
-  
- vector_index           # FAISS vector storage (auto-generated)
-
-
-**Requirements**
-
-Make sure Python 3.9+ is installed.
-
-**Install dependencies using:**
-
+```bash
 pip install -r requirements.txt
+```
 
 **Sample requirements.txt:**
 
-Flask
-
+```
+streamlit
 python-dotenv
-
 langchain
-
 langchain-community
-
 langchain-mistralai
-
 sentence-transformers
-
 faiss-cpu
+```
 
-**Environment Variables**
+---
 
-Create a .env file in your root directory with your Mistral API key:
+## **Environment Variables**
+
+Create a **`.env`** file in the root directory and add your Mistral API key:
+
+```
 MISTRAL_API_KEY=your_actual_api_key_here
+```
 
-Usage
+---
 
-Place PDF files inside the /pdfs/ folder.
+## **Usage**
 
-Run the Flask app:
+Run the Streamlit app:
 
-python multiple-pdf.py
+```bash
+streamlit run multiple-pdf.py
+```
 
-**Access the app in your browser at:**
+Open in your browser at:
+[http://localhost:8501](http://localhost:8501)
 
-http://localhost:5000/
+1. Upload one or more PDF files.
+2. Type a question in the input box.
+3. Get instant answers with source references.
 
-Type a question related to the contents of any uploaded PDF and get an instant answer with source references.
+---
 
-**How It Works**
+## **How It Works**
 
-Loads PDFs and extracts text using PyPDFLoader.
+1. **Upload PDFs** → Extract text using `PyPDFLoader`.
+2. **Split text** → Chunk documents with LangChain’s `CharacterTextSplitter`.
+3. **Embed & Store** → Generate embeddings with HuggingFace and save in FAISS.
+4. **Ask a Question** → Retrieve relevant chunks via similarity search.
+5. **Answer** → Mistral AI answers using LangChain’s QA Chain.
+6. **Display** → The app shows both the answer and the source PDFs.
 
-Splits text into chunks and stores their embeddings using FAISS.
+---
 
-When a question is asked:
-
-Relevant chunks are fetched using vector similarity.
-
-MistralAI answers the question using LangChain’s QA chain.
-
-Source PDF filenames are returned alongside the answer.
-
-**Notes**
-
-Ensure index.html is inside the templates/ folder.
-
-Ensure style.css is inside the static/ folder.
-
-On first run, FAISS index is created and cached.
