@@ -1,4 +1,4 @@
-﻿# AskPDF — PDF Question Answering
+# AskPDF — PDF Question Answering
 
 This repository contains a Streamlit app (`src/multiple-pdf.py`) that lets you upload PDFs, builds a FAISS vectorstore using sentence-transformers embeddings, and answers questions using Mistral via LangChain.
 
@@ -52,7 +52,3 @@ Then open http://localhost:8501 in your browser.
 1. PDFs are loaded and split into chunks with `PyPDFLoader` + `CharacterTextSplitter`.
 2. Embeddings (sentence-transformers) are computed and stored in a FAISS index.
 3. At query time, the app finds similar chunks and uses Mistral (via LangChain) to answer questions and return source filenames.
-
----
-
-If you want, I can also generate a pinned `requirements.txt` with exact working versions from your environment, or prepare a Dockerfile for containerized deployment.
