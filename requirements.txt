@@ -1,0 +1,11 @@
+streamlit
+python-dotenv
+langchain>=0.0.280
+langchain-mistralai
+langchain-community
+sentence-transformers
+faiss-cpu
+torch
+transformers
+pypdf
+# Optional: add any other packages you use (e.g., accelerators)

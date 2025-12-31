@@ -1,101 +1,58 @@
-**AskPDF — Intelligent PDF Question Answering with Mistral & Flask**
+﻿# AskPDF — PDF Question Answering
 
-AskPDF is a Flask-based web application that allows users to ask natural language questions based on the contents of PDF documents. It uses MistralAI’s LLM via LangChain, sentence-transformer embeddings, and FAISS for fast semantic search.
+This repository contains a Streamlit app (`src/multiple-pdf.py`) that lets you upload PDFs, builds a FAISS vectorstore using sentence-transformers embeddings, and answers questions using Mistral via LangChain.
 
-**Features**
- 
- Natural language QA from PDF documents
+## Key files
 
- Powered by Mistral AI, LangChain, HuggingFace embeddings
+- `src/multiple-pdf.py` — Streamlit app entrypoint.
+- `requirements.txt` — Python dependencies for running and deploying the app.
+- `Procfile` — Process declaration for Heroku-like hosts.
 
- Efficient similarity search using FAISS vector database
+## Quick local run (Windows PowerShell)
 
- Simple and interactive web interface using Flask
+1. Create and activate a virtual environment (recommended):
 
- Automatic metadata tagging with PDF filenames
+```powershell
+python -m venv .venv
+.\\.venv\\Scripts\\Activate.ps1
+```
 
- **Project Structure**
+2. Install dependencies:
 
- project/
+```powershell
+python -m pip install -r requirements.txt
+```
 
-app.py                  # Main Flask app
+3. Add your Mistral API key to a `.env` file at the project root:
 
-.env                    # Environment variables (Mistral API key)
+```
+MISTRAL_API_KEY=your_key_here
+```
 
-/templates
+4. Run the Streamlit app:
 
-   index.html          # Frontend HTML page
-/static
+```powershell
+python -m streamlit run src\\multiple-pdf.py --server.headless true
+```
 
-  style.css           # Styling for frontend
-pdfs
+Then open http://localhost:8501 in your browser.
 
-  pdf-files               # Your PDF files to load
-  
- vector_index           # FAISS vector storage (auto-generated)
+## Deploying
 
+- Streamlit Cloud: push the repo to GitHub, create a Streamlit Cloud app and set `MISTRAL_API_KEY` as a secret.
+- Heroku / similar: the included `Procfile` will start Streamlit; set the `MISTRAL_API_KEY` config var on the host.
 
-**Requirements**
+## Notes & troubleshooting
 
-Make sure Python 3.9+ is installed.
+- Some packages (e.g., `faiss-cpu`, `torch`) may need platform-specific wheels. If installation fails, consult their docs or use a host that provides compatible wheels (Streamlit Cloud often works well).
+- If you want GPU support, change the packages accordingly and ensure the host provides GPUs.
 
-**Install dependencies using:**
+## How it works (brief)
 
-pip install -r requirements.txt
+1. PDFs are loaded and split into chunks with `PyPDFLoader` + `CharacterTextSplitter`.
+2. Embeddings (sentence-transformers) are computed and stored in a FAISS index.
+3. At query time, the app finds similar chunks and uses Mistral (via LangChain) to answer questions and return source filenames.
 
-**Sample requirements.txt:**
+---
 
-Flask
-
-python-dotenv
-
-langchain
-
-langchain-community
-
-langchain-mistralai
-
-sentence-transformers
-
-faiss-cpu
-
-**Environment Variables**
-
-Create a .env file in your root directory with your Mistral API key:
-MISTRAL_API_KEY=your_actual_api_key_here
-
-Usage
-
-Place PDF files inside the /pdfs/ folder.
-
-Run the Flask app:
-
-python multiple-pdf.py
-
-**Access the app in your browser at:**
-
-http://localhost:5000/
-
-Type a question related to the contents of any uploaded PDF and get an instant answer with source references.
-
-**How It Works**
-
-Loads PDFs and extracts text using PyPDFLoader.
-
-Splits text into chunks and stores their embeddings using FAISS.
-
-When a question is asked:
-
-Relevant chunks are fetched using vector similarity.
-
-MistralAI answers the question using LangChain’s QA chain.
-
-Source PDF filenames are returned alongside the answer.
-
-**Notes**
-
-Ensure index.html is inside the templates/ folder.
-
-Ensure style.css is inside the static/ folder.
-
-On first run, FAISS index is created and cached.
+If you want, I can also generate a pinned `requirements.txt` with exact working versions from your environment, or prepare a Dockerfile for containerized deployment.

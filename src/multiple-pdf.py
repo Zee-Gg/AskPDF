@@ -1,6 +1,10 @@
 import os
 import streamlit as st
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
@@ -10,10 +14,12 @@ from langchain_mistralai.chat_models import ChatMistralAI
 import tempfile
 
 # ✅ Load environment variables
-load_dotenv()
 api_key = os.getenv("MISTRAL_API_KEY")
+if not api_key and "MISTRAL_API_KEY" in st.secrets:
+    api_key = st.secrets["MISTRAL_API_KEY"]
+
 if not api_key:
-    st.error("❌ **MISTRAL_API_KEY not found in `.env` file. Please add it and restart the app.**")
+    st.error("❌ **MISTRAL_API_KEY not found in `.env` file or Streamlit secrets. Please add it and restart the app.**")
     st.stop()
 
 # 📁 Constants
