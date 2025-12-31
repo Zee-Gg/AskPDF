@@ -7,9 +7,12 @@ except ImportError:
     pass
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.document_loaders import PyPDFLoader
-from langchain.chains.question_answering import load_qa_chain
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
+try:
+    from langchain.chains.question_answering import load_qa_chain
+except ImportError:
+    from langchain_classic.chains.question_answering import load_qa_chain
 from langchain_mistralai.chat_models import ChatMistralAI
 import tempfile
 
@@ -66,6 +69,13 @@ if uploaded_files:
     # ✂️ Split text into chunks
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     docs = text_splitter.split_documents(all_docs)
+    
+    # Filter out empty documents
+    docs = [doc for doc in docs if doc.page_content and doc.page_content.strip()]
+
+    if not docs:
+        st.warning("⚠️ No text found in the uploaded PDFs. Please upload PDFs with selectable text.")
+        st.stop()
 
     # 🔍 Vector store
     embeddings = HuggingFaceEmbeddings(model_name=MODEL_NAME)
